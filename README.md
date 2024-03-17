@@ -13,26 +13,26 @@
 The table provided can help determine what components I need to model:
 
 ```
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Company Name         | Alpha | Bravo | Charlie | Delta | Echo | Notes                                          |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Cruise Speed (MPH)   | 120   | 100   | 160     | 90    | 30   |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Battery (kWh)        | 320   | 100   | 220     | 120   | 150  |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Time to Charge (hrs) | 0.6   | 0.2   | 0.8     | 0.62  | 0.3  |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Energy use at Cruise | 1.6   | 1.5   | 2.2     | 0.8   | 5.8  |                                                |
-| (kWh/mile)           |       |       |         |       |      |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Passenger Count      | 4     | 5     | 3       | 2     | 2    |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
-| Probability of       | 0.25  | 0.10  | 0.05    | 0.22  | 0.61 | Q: What is this?                               |
-| fault per hour       |       |       |         |       |      | Is it a random chance of fault?                |
-|                      |       |       |         |       |      | Or is it a forced cool down when it exceeds 1? |
-|                      |       |       |         |       |      | How long is cool down or is vehicle destroyed? |
-|                      |       |       |         |       |      |                                                |
-|----------------------|-------|-------|---------|-------|------|------------------------------------------------|
+|----------------------|-------|-------|---------|-------|------|
+| Company Name         | Alpha | Bravo | Charlie | Delta | Echo |
+|----------------------|-------|-------|---------|-------|------|
+| Cruise Speed (MPH)   | 120   | 100   | 160     | 90    | 30   | 
+|----------------------|-------|-------|---------|-------|------|
+| Battery (kWh)        | 320   | 100   | 220     | 120   | 150  |
+|----------------------|-------|-------|---------|-------|------|
+| Time to Charge (hrs) | 0.6   | 0.2   | 0.8     | 0.62  | 0.3  |
+|----------------------|-------|-------|---------|-------|------|
+| Energy use at Cruise | 1.6   | 1.5   | 2.2     | 0.8   | 5.8  |
+| (kWh/mile)           |       |       |         |       |      |
+|----------------------|-------|-------|---------|-------|------|
+| Passenger Count      | 4     | 5     | 3       | 2     | 2    |
+|----------------------|-------|-------|---------|-------|------|
+| Probability of       | 0.25  | 0.10  | 0.05    | 0.22  | 0.61 |
+| fault per hour       |       |       |         |       |      |
+|                      |       |       |         |       |      |
+|                      |       |       |         |       |      |
+|                      |       |       |         |       |      |
+|----------------------|-------|-------|---------|-------|------|
 ```
 # Design Ideas
 
@@ -47,7 +47,7 @@ Things on or about Aircraft:
 External to the aircraft
 - Charger - Limited resource. Have a Mutex or somesuch.
 - Clock. Do I have an actual ticking clock or do I have some centralized event queue set current time to the next event trigger time (track the time based on that).
-  - Seems pretty obvious once modelikng the table data as a struct-per-model that I will just simulate clock with events, No need to build a ticking clock.
+  - Seems pretty obvious once modeling the table data as a struct-per-model that I will just simulate clock with events, No need to build a ticking clock.
 
 
 # Deliverables
@@ -76,4 +76,34 @@ Please do not hesitate to reach out to ask any questions about the problem! Howe
 
 ## questions
 - faults. Is there any downtime associated with those? I will assume not and that I should just count them, but need to verify that is correct.
+
+
+# Implementation Notes
+
+Originally, I want thinking of checking the states of various aircraft and comparing the "current time".
+
+roughly the idea was this though there were some gaps.
+
+```
+foreach aircraft:
+          if aircraft.state == FLYING
+              aircraft.empty_battery()
+              aircraft.state = WAITING_TO_CHARGE
+              charging_queue.push(Event(eventStartTime, chargingeEndTime, aircraft))
+          else if aircraft.state == CHARGING
+              aircraft.power = aircraft.maxpower
+              chargeEndime = aircraft.telemetry.charge_start + aircraft.charge_duration
+              aircraft.telemetry += aircraft.charge_duration
+              aircraft.state = FLYING
+              active_charging.pop(aircraft.id)
+          else  // state == WAITING-TO-CHARGE
+              if active_charging.size < 3
+                active_charging.push(Event(aircraft)
+```
+
+Filling those gaps led me to the much simpler simulation mode that all aircraft are in one of 2 queues: 
+waiting-to-charge and actively-charging
+
+waiting-to-charge is a priority queue sorted by charge-wait-start time. lowest is next.
+acive-charging is an array of 3 Event objects whcih store the charge-wait-start, charge-start, charge-end time, and the aircraft id or object ref. 
 

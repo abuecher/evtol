@@ -1,0 +1,6 @@
+Checks: '-*,cppcoreguidelines-*,readability-identifier-naming' 
+HeaderFilterRegex: '.*' # Apply checks to all header files
+CheckOptions: 
+  - { key: AddIncludeDirs,  value: '/usr/include/c++/11' }
+  - { key: readability-identifier-naming.FunctionCase, value: camelBack }
+  - { key: readability-identifier-naming.VariableCase, value: CamelCase }

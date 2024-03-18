@@ -1,0 +1,7 @@
+---
+Language:        Cpp
+BasedOnStyle:  LLVM
+
+# my overrides on style
+AllowShortBlocksOnASingleLine: true
+IndentWidth:     4

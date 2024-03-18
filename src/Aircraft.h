@@ -1,11 +1,11 @@
 #ifndef EVTOL_AIRCRAFT_H
 #define EVTOL_AIRCRAFT_H
 
-#include <string>
 #include <limits>
+#include <string>
 
-using Stamp_t = uint32_t;
-const Stamp_t ILLEGAL_TIME = std::numeric_limits<uint32_t>::max(); // maxint 32
+using Stamp_t = double;
+const Stamp_t ILLEGAL_TIME = std::numeric_limits<double>::max(); // maxint 32
 
 /**
  * Modelling each aircraft as an object with its own state machine. May or may
@@ -42,32 +42,29 @@ enum ModelId_t {
  */
 struct AirCraftModel {
     ModelId_t model;
-    int cruise_speed; // MPH
-    int battery_life; // kWh
+    int cruiseSpeed; // MPH
+    int batteryLife; // kWh
 
     // TODO assumption: This includes time spent waiting for a charger. Find out
     // if assumption valid.
-    float time_to_charge;    // hrs -
-    float cruise_power_draw; // kWh / mile
-    int passenger_count;
-    float faults_per_hour; // probability if faults per hour in decimal format.
-    std::string typeName;  // company name
+    double timeToCharge;    // hrs -
+    double cruisePowerDraw; // kWh / mile
+    int passengerCount;
+    double faultsPerHour;  // probability if faults per hour in decimal format.
+    std::string typeName; // company name
 };
 
 /**
  * Things each aircraft instance needs to track.
  */
 struct Telemetry {
-    long total_flight_hours;
-    float total_miles_traveled;
+    double totalFlightHours;
+    double totalMilesTraveled;
 
-    // TODO includes time spent waiting for a charger. find out if that is a
-    // valid assumption. If not I need adjust the calculation
-    float total_charging_time;
-    int total_faults;
-
-    // int num_passengers; // passengers are always max so no need to track that
-    // per instance.
+    // Includes time spent waiting for a charger. TODO is that assumption valid?
+    double totalChargingTime;
+    int chargingStops;
+    int totalFaults;
 };
 
 struct ChargingEvent {
@@ -75,45 +72,35 @@ struct ChargingEvent {
     Stamp_t startChargingTime;
     Stamp_t chargingCompletionTime;
     int aircraftId;
-    //    AircraftInstance& aircraft; // do I need to paralleize? if so use
-    //    int. If not can suie AircraftInstance& and eliminate a redirect.
-
-    // States state;   // TODO I can clean up some issues if an aircraft just
-    // holds the most recent Event?
 };
 
-
 class AircraftInstance {
+public:
+    // although ctor is overriden it is only setting vars so no need for "rule of
+    // 5" here.
+    AircraftInstance(AirCraftModel aircraftModel, int aircraftId, double flightMinPerCharge);
 
-  public:
-    // although ctror overriden it is only setting vars so no need
-    // for "rule of 5" here.
-    AircraftInstance(AirCraftModel aircraftModel, int aircraftId,
-                     double flight_time_per_charge);
-
-    void add_telemetry(Stamp_t end_time, double flight_time_to_record_minutes,
-                       double chargingTimeToRecordMinutes,
-                       int flightDistanceInMiles, int numFaults);
-
-    // TODO combine w/add_telem
+    void addTelemetry(Stamp_t endTime, double flightTimeToRecordMinutes,
+                      double chargingTimeToRecordMinutes, int flightDistanceInMiles, int numFaults);
 
     /**
      * Update telemetry and return next time it will need to charge.
-    */
-    Stamp_t update_telemetry(Stamp_t curTime, const ChargingEvent &recentEvent);
-    Stamp_t get_startFlightSegmentTime() const { return _startSegmentTime; }
+     */
+    Stamp_t updateTelemetry(Stamp_t curTime, const ChargingEvent& recentEvent);
 
     // getters
     inline int aircraftId() const { return _aircraftId; }
     inline double flightTimePerCharge() const { return _flightTimePerCharge; }
-    inline Telemetry get_telemetry() const { return _telemetry; }
+    inline Telemetry getTelemetry() const { return _telemetry; }
 
     // Number of hours to recharge the battery.
-    inline float batteryChargeTimeMinutes() const { return 60 * _model.time_to_charge; } // TODO this is in hours Most others in min.
+    inline double batteryChargeTimeMinutes() const {
+        return 60 * _model.timeToCharge;
+    } // TODO this is in hours Most others in min.
+
     inline Stamp_t startSegmentTime() const { return _startSegmentTime; }
-    void startSegmentTime(Stamp_t nextSegmentTime) {
-        _startSegmentTime = nextSegmentTime;
-    }
+
+    void startSegmentTime(Stamp_t nextSegmentTime) { _startSegmentTime = nextSegmentTime; }
 
     ModelId_t modelType();
 
@@ -129,7 +116,5 @@ private:
                                // TODO this is doing double-dutyt cleanm it up.
     Telemetry _telemetry;
 };
-
-
 
 #endif // EVTOL_AIRCRAFT_H

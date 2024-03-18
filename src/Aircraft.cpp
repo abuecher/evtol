@@ -11,7 +11,7 @@ int calc_faults(double faultsPerHour, Stamp_t time_minutes) {
         time_minutes -= curPeriod;
 
         auto rate = 100 * faultsPerHour * static_cast<double>(curPeriod) / 60.0;
-        if ((rand() % 100) > rate) {
+        if ((rand() % 100) <= rate) {
             ++numFaults;
         }
     }
@@ -19,45 +19,38 @@ int calc_faults(double faultsPerHour, Stamp_t time_minutes) {
 }
 
 AircraftInstance::AircraftInstance(AirCraftModel aircraftModel, int aircraftId,
-                                   double flight_time_per_charge_min)
-    : _model(aircraftModel), _aircraftId(aircraftId),
-      _flightTimePerCharge(flight_time_per_charge_min),
-      _startSegmentTime(0), _telemetry({0, 0, 0, 0}) {}
+                                   double flightMinPerCharge)
+    : _model(aircraftModel), _aircraftId(aircraftId), _flightTimePerCharge(flightMinPerCharge),
+      _startSegmentTime(0), _telemetry{0, 0, 0, 0, 0} {}
 
-void AircraftInstance::add_telemetry(Stamp_t end_time,
-                                     double flight_time_to_record_minutes,
-                                     double chargingTimeToRecordMinutes,
-                                     int flightDistanceInMiles, int numFaults) {
-    _telemetry.total_charging_time += chargingTimeToRecordMinutes;
-    _telemetry.total_flight_hours += flight_time_to_record_minutes / 60;
-    _telemetry.total_faults += numFaults;
-    _telemetry.total_miles_traveled += flightDistanceInMiles;
+void AircraftInstance::addTelemetry(Stamp_t endTime, double flightTimeToRecordMinutes,
+                                    double chargingTimeToRecordMinutes, int flightDistanceInMiles,
+                                    int numFaults) {
+    _telemetry.totalChargingTime += chargingTimeToRecordMinutes;
+    _telemetry.totalFlightHours += flightTimeToRecordMinutes / 60;
+    _telemetry.totalFaults += numFaults;
+    _telemetry.totalMilesTraveled += flightDistanceInMiles;
+    ++_telemetry.chargingStops;
 }
 
 // TODO a simpler, better model for this would be to passt in events t5hat just
 // start/stop time3s and type. switch b type.
-Stamp_t AircraftInstance::update_telemetry(Stamp_t curTime,
-                                        const ChargingEvent &recentEvent) {
+Stamp_t AircraftInstance::updateTelemetry(Stamp_t curTime, const ChargingEvent& recentEvent) {
     double flightMinToRecord = curTime - _startSegmentTime;
     // includes waiting time into charging time.
-    double chargingMin =
-        recentEvent.chargingCompletionTime - recentEvent.startWaitingTime;
-    int flightMiles = this->_model.cruise_speed * flightMinToRecord / 60;
-    int numFaults =
-        calc_faults(this->_model.faults_per_hour, flightMinToRecord);
-    add_telemetry(curTime, flightMinToRecord, chargingMin, flightMiles,
-                  numFaults);
-//    Stamp_t nextChargeTime = curTime + 60 * _model.battery_life / _model.cruise_power_draw;
+    double chargingMin = recentEvent.chargingCompletionTime - recentEvent.startWaitingTime;
+    int flightMiles = this->_model.cruiseSpeed * flightMinToRecord / 60;
+    int numFaults = calc_faults(this->_model.faultsPerHour, flightMinToRecord);
+    addTelemetry(curTime, flightMinToRecord, chargingMin, flightMiles, numFaults);
+    //    Stamp_t nextChargeTime = curTime + 60 * _model.batteryLife / _model.cruisePowerDraw;
     Stamp_t nextChargeTime = static_cast<Stamp_t>(curTime + this->flightTimePerCharge());
     return nextChargeTime;
 
-    // TODO pondering a refactor: 
+    // TODO pondering a refactor:
     // if I refactor ChargingEvent to just be Event w/ State == CHARGING ||
     // FLYING || WAITING and segmentStartTime, segmentEndTime. just update
     // specific fields.
 }
 
 // added for unit testing.
-ModelId_t AircraftInstance::modelType() {
-    return _model.model;
-}
+ModelId_t AircraftInstance::modelType() { return _model.model; }

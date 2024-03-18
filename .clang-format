@@ -1,7 +1,15 @@
 ---
 Language:        Cpp
-BasedOnStyle:  LLVM
+BasedOnStyle: LLVM
+AccessModifierOffset: -4
+AlwaysBreakTemplateDeclarations: true
+ColumnLimit: 100
+IndentWidth: 4
+MaxEmptyLinesToKeep: 2
+PointerBindsToType: true
+TabWidth: 4
 
-# my overrides on style
 AllowShortBlocksOnASingleLine: true
-IndentWidth:     4
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false

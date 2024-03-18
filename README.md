@@ -40,7 +40,7 @@ Decomposing what is needed based on above data table:
 Things on or about Aircraft:
 - Aircraft - wraps all other components. Instances of this are what are measured.
 - Battery - stats: charging_rate, total_charge
-- Engine - cruise_speed, battery_drain,
+- Engine - cruiseSpeed, battery_drain,
 - Cabin - Where the passengers are. Limited utility. Should I just make this a single int in the Aircraft class
 
 

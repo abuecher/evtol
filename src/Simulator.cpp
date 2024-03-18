@@ -156,15 +156,3 @@ Report Simulator::generate_report() const {
 
     return Report();
 }
-
-
-
-std::string Report::toString() const { return "ADAM_DEBUG placeholder"; }
-
-Report::Report() {
-    // _modelId = NONE;
-    // _count = 0;
-    // _avg_flight_time_per_flight = 0;
-    // avg_time_charging_per_flight = 0;
-    // _telemetry_totals = {0, 0, 0, 0};
-}

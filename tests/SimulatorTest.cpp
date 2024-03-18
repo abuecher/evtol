@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../Simulator.h"
+#include "src/Simulator.h"
 
 #include <cstdlib>
 

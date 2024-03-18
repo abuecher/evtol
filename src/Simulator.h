@@ -10,7 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "Aircraft.h"
+#include "src/Aircraft.h"
+#include "src/Report.h"
 
 // Comparison operator for the waiting queue
 struct WaitingChargingEventComparator {
@@ -36,23 +37,7 @@ using ActiveChagingQueue_t =
     std::priority_queue<ChargingEvent, std::deque<ChargingEvent>,
                         ActiveChargingEventComparator>;
 
-class Report {
-    //       private:
-    //         ModelId_t _modelId;
-    //         int _count; // number of aircraft of this model.
-    //         double _avg_flight_time_per_flight;
 
-    //         // TODO assumption I include the time waiting for a charger. If
-    //         // asumption not valid need to adjust final report calculation
-    //         double avg_time_charging_per_flight;
-    //         Telemetry _telemetry_totals;
-
-  public:
-    Report(); // ctor inits all to 0.
-              //         void add_telemetry(const AircraftInstance &aircraft,
-              //                            bool includePartialFlightMiles);
-    std::string toString() const;
-};
 
 class SimulatorTest; // fed decl for testing.
 

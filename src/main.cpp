@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Simulator.h"
+#include "src/Simulator.h"
 
 // ADAM_DEBUG sketching out basic ideas.
 /*

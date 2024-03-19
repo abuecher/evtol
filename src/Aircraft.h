@@ -3,6 +3,8 @@
 
 #include <limits>
 #include <string>
+#include "common_defs.h"
+
 
 using Stamp_t = double;
 const Stamp_t ILLEGAL_TIME = std::numeric_limits<double>::max(); // maxint 32
@@ -65,6 +67,7 @@ struct Telemetry {
     double totalChargingTime;
     int chargingStops;
     int totalFaults;
+    int passengers; // this is always maxed out for this exercise.
 };
 
 struct ChargingEvent {
@@ -80,30 +83,38 @@ public:
     // 5" here.
     AircraftInstance(AirCraftModel aircraftModel, int aircraftId, double flightMinPerCharge);
 
-    void addTelemetry(Stamp_t endTime, double flightTimeToRecordMinutes,
-                      double chargingTimeToRecordMinutes, int flightDistanceInMiles, int numFaults);
+    /**
+     * Update telemetry after finished charging and return next time it will
+     * need to charge.
+     */
+    Stamp_t updateTelemetryForCharging(Stamp_t curTime, const ChargingEvent& recentEvent);
 
     /**
-     * Update telemetry and return next time it will need to charge.
+     * Update aircraft telemetry for a flight segment. Returns time flight
+     * segment ends.
      */
-    Stamp_t updateTelemetry(Stamp_t curTime, const ChargingEvent& recentEvent);
+    Stamp_t updateTelemetryForFlight(Stamp_t curTime, Stamp_t endTime);
 
     // getters
     inline int aircraftId() const { return _aircraftId; }
     inline double flightTimePerCharge() const { return _flightTimePerCharge; }
     inline Telemetry getTelemetry() const { return _telemetry; }
+    inline ModelId_t modelType() const { return _model.model; }
+    inline std::string modelName() const { return _model.typeName; }
 
     // Number of hours to recharge the battery.
     inline double batteryChargeTimeMinutes() const {
         return 60 * _model.timeToCharge;
-    } // TODO this is in hours Most others in min.
+    }
 
     inline Stamp_t startSegmentTime() const { return _startSegmentTime; }
 
     void startSegmentTime(Stamp_t nextSegmentTime) { _startSegmentTime = nextSegmentTime; }
 
-    ModelId_t modelType();
-
+private:
+    void addTelemetry(Stamp_t endTime, double flightTimeToRecordMinutes,
+                      double chargingTimeToRecordMinutes, int flightDistanceInMiles, int numFaults, bool incrementChargingStops);
+//internal state
 private:
     // these are consts so no need to encapsulate.
     AirCraftModel _model; // copy of the model.

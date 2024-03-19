@@ -7,10 +7,10 @@
 #include <map>
 #include <queue>
 
-const int NUM_AIRCRAFT = 20;
 const int NUM_MODELS = 5;
 const int NUM_CHARGERS = 3;
 const int HARDCODED_SEED = 1;
+const char* REPORT_FILENAME = "results.csv";
 
 
 static const AirCraftModel models[] = {{ALPHA, 120, 320, 0.6, 1.6, 4, 0.25, "ALPHA"},
@@ -44,52 +44,42 @@ std::vector<AircraftInstance> Simulator::generateTestAircraft(int numAircraft) c
 }
 
 
-void Simulator::initChargerWaitingQueue(WaitingQueue_T& waitingQueue) {
-    // this->_aircrafts.reserve(NUM_ARCRAFT);
+void Simulator::initChargerWaitingQueue(WaitingQueue_T& waitingQueue, Stamp_t simDuration) {
     // choose 20 aircraft of random model id in range 0 - 4, inclusive. Add an
     // instance of that to _aircrafts.
-    for (int i = 0; i < NUM_AIRCRAFT; ++i) {
+    for (int i = 0; i < _aircrafts.size(); ++i) {
         // note - i will become the aircraftId.
         int aircraftId = i;
-        //        auto aircraftType = pickRandomModel();
-        //        double milesFlightPerCharge = models[aircraftType].batteryLife /
-        //        models[aircraftType].cruisePowerDraw; double minutesFlightPerCharge = 60 *
-        //        milesFlightPerCharge / models[aircraftType].cruisePowerDraw;
-        //        _aircrafts.emplace_back(models[aircraftType], aircraftId,
-        //                                minutesFlightPerCharge);
 
         Stamp_t flightEndTime = _aircrafts[i].flightTimePerCharge();
+        flightEndTime = std::min(flightEndTime, simDuration);
+        // record the first leg of flight. After this, telemetry is recorded when they enter/leave charging station.
+        _aircrafts[i].updateTelemetryForFlight(flightEndTime, simDuration);
         waitingQueue.push({flightEndTime, ILLEGAL_TIME, ILLEGAL_TIME, aircraftId});
     }
 }
 
 // std::priority_queue<ChargingEvent, std::vector<ChargingEvent>,
 // std::greater<ChargingEvent>> waiting_queue;
-void Simulator::simulateUntil(Stamp_t endTime) {
+void Simulator::simulateUntil(int numAircraft, Stamp_t endTime) {
+    std::cout << "started sim until " << endTime << " minutes" << std::endl;
     WaitingQueue_T waiting_queue;
     ActiveChagingQueue_t active_queue;
     Stamp_t curTime = 0;
     // Stamp_t endTime = 3 * 60; // 3 hours in munits.
-    this->_aircrafts = generateTestAircraft(NUM_AIRCRAFT);
-    initChargerWaitingQueue(waiting_queue);
+    this->_aircrafts = generateTestAircraft(numAircraft);
+    initChargerWaitingQueue(waiting_queue, endTime);
 
     // loop over time. When an aircraft has been charged, it gets removed from
-    // active queue, the next next flight miles arc cal'd and updated hen added
+    // active queue, the next flight miles arc cal'd and updated hen added
     // to waiting queue time for time after flight
     Stamp_t lowestTime = ILLEGAL_TIME;
     int lowestIndex;
     while (curTime < endTime) {
-        // update charging queues 1 aircraft at a time. TODO optimize.
+        // update charging queues 1 aircraft at a time, more or less (can pop mulitple items off active_queue)
 
         auto waitingEvent = waiting_queue.top();
         waiting_queue.pop();
-
-        // if actively charging is full, them pop out the one which is next to finish
-        // ADAM_DEBUG
-        if (!active_queue.empty()) {
-            std::cout << "aq.top. carge complete eta: " << active_queue.top().chargingCompletionTime
-                      << std::endl;
-        }
 
         // if there are aircraft that need to leave a charger do so now. Also, if all charegers
         // occupied skip to time where next one leaves.
@@ -100,14 +90,16 @@ void Simulator::simulateUntil(Stamp_t endTime) {
             auto outgoingEvent = active_queue.top();
             active_queue.pop();
             curTime = std::max(curTime, outgoingEvent.chargingCompletionTime);
-
+            curTime = std::min(curTime, endTime);
             // determine next time it needs to charge and put it back
             // into waiting.
+            std::cout << "processing curTime = " << curTime << std::endl;
             Stamp_t nextChargeTime =
-                _aircrafts[outgoingEvent.aircraftId].updateTelemetry(curTime, outgoingEvent);
-            //            nextChargeTime = std::max(nextChargeTime, endTime);
+                    _aircrafts[outgoingEvent.aircraftId].updateTelemetryForCharging(curTime, outgoingEvent);
+            nextChargeTime = std::min(nextChargeTime, endTime);
             waiting_queue.push(
                 {nextChargeTime, ILLEGAL_TIME, ILLEGAL_TIME, outgoingEvent.aircraftId});
+            Stamp_t nextTime = _aircrafts[outgoingEvent.aircraftId].updateTelemetryForFlight(curTime, nextChargeTime);
         }
         curTime = std::max(curTime, waitingEvent.startWaitingTime);
         int chargeTime = _aircrafts[waitingEvent.aircraftId].batteryChargeTimeMinutes();
@@ -115,41 +107,47 @@ void Simulator::simulateUntil(Stamp_t endTime) {
         waitingEvent.chargingCompletionTime = curTime + chargeTime;
         active_queue.push(waitingEvent);
     }
+
+    // finish up add charging times for the items still on chargers.
+    while(!active_queue.empty()) {
+        auto chargingItem = active_queue.top();
+        active_queue.pop();
+        _aircrafts[chargingItem.aircraftId].updateTelemetryForCharging(curTime, chargingItem);
+    }
+    // update charging times for all that were waiting for chargers that would not still be in the air at end time
+    // (if still in air the previous flight update will include their time).
+    while(!waiting_queue.empty() && waiting_queue.top().startChargingTime < endTime) {
+        auto waitingToCharge = waiting_queue.top();
+        waiting_queue.pop();
+        _aircrafts[waitingToCharge.aircraftId].updateTelemetryForCharging(curTime, waitingToCharge);
+    }
 }
 
 /**
  * Generate CSV output file "results.csv"
  * @return
  */
-Report Simulator::generate_report() const {
-    // at the end of 3 hours all aircraft except the actively charging ones will
-    // need to updatge their final flight miles. It will be a partial (not full
-    // battery charge).
 
-    // std::map<ModelId_t, Report> modelReports;
-    // for (auto &aircraft : _aircrafts) {
-    //     modelReports[aircraft.modelId()].addTelemetry(aircraft, true);
-    // }
-
-    // // calc avs for each model
-    // for (auto& model : modelTelemetry) {
-    //     model.second.totalChargingTime /= NUM_ARCRAFT;
-    //     model.second.totalFaults /= NUM_ARCRAFT;
-    //     model.second.totalFlightHours /= NUM_ARCRAFT;
-    //     model.second.totalMilesTraveled /= NUM_ARCRAFT;
-    // }
-
-    std::ofstream out("results.csv");
-    if (!out) {
-        throw std::runtime_error("Unable to create report results.csv");
+Report Simulator::generateSimulationReport() const {
+    Report report;
+    for (auto& aircraft : _aircrafts) {
+        report.addAircraftTelemetry(aircraft.aircraftId(), aircraft.modelName(), aircraft.getTelemetry());
     }
 
-    // table header
-    out << "Model,avg-flight-time,avg-distance-per-flight,avs-time-chaging-per-charge-session,"
-           "total-faults,total-passenger-miles\n";
+    return report;
+}
 
-    // generate 1 row (line) per model.
-
-
-    return Report();
+void Simulator::writeReport(const Report &report) const {
+    // generate one report for std out. second one will go into results.csv.
+#ifdef USE_DEBUG_INFO
+    report.writeReport(std::cout);
+#endif
+    std::cout << std::endl;
+    std::cout << "saving report as CSV to " << REPORT_FILENAME << std::endl;
+    std::ofstream out(REPORT_FILENAME);
+    if (!out) {
+        throw std::runtime_error("Unable to create report file");
+    }
+    report.writeReport(out, ',');
+    out.close();
 }

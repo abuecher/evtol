@@ -107,3 +107,25 @@ waiting-to-charge and actively-charging
 waiting-to-charge is a priority queue sorted by charge-wait-start time. lowest is next.
 acive-charging is an array of 3 Event objects whcih store the charge-wait-start, charge-start, charge-end time, and the aircraft id or object ref. 
 
+# How to run it
+
+Built and tested using Ubuntu-22.04.
+dependencies: gtest (cmake should download that during config).
+
+Built and testing using gcc and make. It should work just as well with any combo of those adn LLVM and ninja, but I have not tested LLVM or ninja with this.
+
+```bash
+rm -rf build
+mkdir build && cd build
+cmake ..
+make
+make test
+
+# to see more detail on each test case run use:
+build/tests/simulator_tests.
+
+# to run the actual simulation
+build/evol
+```
+
+Results are written to stdout as well as file results.csv.

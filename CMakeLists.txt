@@ -30,7 +30,8 @@ endif()
 enable_testing()
 add_test(NAME SimulatorTests COMMAND simulator_tests) # Assuming your test executable is 'my_tests'
 
-add_library(evtol_core STATIC src/Aircraft.h src/Aircraft.cpp src/Simulator.h src/Simulator.cpp src/Report.h src/Report.cpp)
+add_library(evtol_core STATIC src/Aircraft.h src/Aircraft.cpp src/Simulator.h src/Simulator.cpp src/Report.h src/Report.cpp
+        src/common_defs.h)
 #target_link_libraries(evtol_core PRIVATE SQLite::SQLite3)
 add_executable(evtol src/main.cpp)
 target_link_libraries(evtol PRIVATE evtol_core)

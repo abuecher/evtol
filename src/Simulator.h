@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "src/Aircraft.h"
-#include "src/Report.h"
+#include "common_defs.h"
+#include "Aircraft.h"
+#include "Report.h"
 
 // Comparison operator for the waiting queue
 struct WaitingChargingEventComparator {
@@ -45,9 +46,10 @@ public:
      * with them
      */
     std::vector<AircraftInstance> generateTestAircraft(int numAircraft) const;
-    void initChargerWaitingQueue(WaitingQueue_T& waitingQueue);
-    void simulateUntil(Stamp_t endTime);
-    Report generate_report() const; // generate report for all aircraft
+    void initChargerWaitingQueue(WaitingQueue_T& waitingQueue, Stamp_t simDuration);
+    void simulateUntil(int numAircraft, Stamp_t endTime);
+    Report generateSimulationReport() const; // generate report for all aircraft
+    void writeReport(const Report& report) const;
 };
 
 #endif // EVTOL_SIMULATOR_H

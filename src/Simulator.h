@@ -9,18 +9,20 @@
 #include "Aircraft.h"
 #include "Report.h"
 
-// Comparison operator for the waiting queue
+/**
+ * Comparison operator for the waiting queue
+ */
 struct WaitingChargingEventComparator {
     bool operator()(const ChargingEvent& a, const ChargingEvent& b) const {
-        // Prioritize events with earlier startWaitingTime
         return a.startWaitingTime > b.startWaitingTime;
     }
 };
 
-// Comparison operator for the active queue (the ones on the chargers)
+/**
+ * Comparison operator for the active queue (the ones on the chargers)
+ */
 struct ActiveChargingEventComparator {
     bool operator()(const ChargingEvent& a, const ChargingEvent& b) const {
-        // Prioritize events with earlier startWaitingTime
         return a.chargingCompletionTime > b.chargingCompletionTime;
     }
 };
@@ -32,8 +34,6 @@ using ActiveChagingQueue_t =
     std::priority_queue<ChargingEvent, std::deque<ChargingEvent>, ActiveChargingEventComparator>;
 
 
-class SimulatorTest; // fed decl for testing.
-
 class Simulator {
 private:
     std::vector<AircraftInstance> _aircrafts;
@@ -41,14 +41,10 @@ private:
     ModelId_t pickRandomModel() const;
 
 public:
-    /**
-     * Populate _aircrqafts w/ 20 random aircraft and populate waitingQAueue
-     * with them
-     */
     std::vector<AircraftInstance> generateTestAircraft(int numAircraft) const;
     void initChargerWaitingQueue(WaitingQueue_T& waitingQueue, Stamp_t simDuration);
     void simulateUntil(int numAircraft, Stamp_t endTime);
-    Report generateSimulationReport() const; // generate report for all aircraft
+    Report generateSimulationReport() const; ///< generate report for all aircraft
     void writeReport(const Report& report) const;
 };
 

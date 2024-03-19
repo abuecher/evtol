@@ -6,7 +6,6 @@
 - Must be coded in C++
 - Must include unit tests (only a few different types of unit tests needed, does not need full coverage) - I should also include some stuff like static analyzers, and threading tests, etc
 - TODO and NOTE are OK for things that might take too long to properly implement.
--
 
 # Concepts
 
@@ -80,7 +79,7 @@ Please do not hesitate to reach out to ask any questions about the problem! Howe
 
 # Implementation Notes
 
-Originally, I want thinking of checking the states of various aircraft and comparing the "current time".
+Originally, I was thinking of checking the states of various aircraft and comparing the "current time".
 
 roughly the idea was this though there were some gaps.
 
@@ -105,14 +104,18 @@ Filling those gaps led me to the much simpler simulation mode that all aircraft 
 waiting-to-charge and actively-charging
 
 waiting-to-charge is a priority queue sorted by charge-wait-start time. lowest is next.
-acive-charging is an array of 3 Event objects whcih store the charge-wait-start, charge-start, charge-end time, and the aircraft id or object ref. 
+active-charging is a priority queue of up to 3 event objects which store the charge-wait-start, charge-start, charge-end time, and the aircraft id or object ref. 
+
+After the end time has been reached in the main loop, some additional post
+processing is performed
+
 
 # How to run it
 
 Built and tested using Ubuntu-22.04.
 dependencies: gtest (cmake should download that during config).
 
-Built and testing using gcc and make. It should work just as well with any combo of those adn LLVM and ninja, but I have not tested LLVM or ninja with this.
+Built and testing using gcc and make. It should work just as well with any combo of those and LLVM and ninja. Works just fine with ninja, but I have not tested clang beyond clang-tidy and clang-format. Not tested on msvc
 
 ```bash
 rm -rf build

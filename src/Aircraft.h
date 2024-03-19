@@ -1,29 +1,13 @@
 #ifndef EVTOL_AIRCRAFT_H
 #define EVTOL_AIRCRAFT_H
 
+#include "common_defs.h"
 #include <limits>
 #include <string>
-#include "common_defs.h"
 
 
 using Stamp_t = double;
-const Stamp_t ILLEGAL_TIME = std::numeric_limits<double>::max(); // maxint 32
-
-/**
- * Modelling each aircraft as an object with its own state machine. May or may
- * not break it down into components (breaking it down provides a more OOD that
- * might be more like how one would model a more complex real-world design. On
- * the other hand it actually complicates the simulation without much benefit
- * since the problem does not ask one to do things like swap out batteries or
- * repair components).
- */
-enum States {
-    STATE_INIT,
-    STATE_FLYING,
-    STATE_WAITING_FOR_CHARGER, // can this be omitted as a state/consolidated w
-                               // charging?
-    STATE_CHARGING,
-};
+const Stamp_t ILLEGAL_TIME = std::numeric_limits<double>::max();
 
 enum ModelId_t {
     ALPHA,
@@ -36,23 +20,16 @@ enum ModelId_t {
 };
 
 /**
- * Model the provided table for models of aircraft. Since the simulation is
- * basic, we can reuse this for the aircraft instances not just models. Either
- * copy base model stats or something. Once airborne each aircraft will
- * separately need to deal with resource contention for chargers even if they
- * started at same time.
+ * Model the provided table for models of aircraft.
  */
 struct AirCraftModel {
     ModelId_t model;
-    int cruiseSpeed; // MPH
-    int batteryLife; // kWh
-
-    // TODO assumption: This includes time spent waiting for a charger. Find out
-    // if assumption valid.
+    int cruiseSpeed;        // MPH
+    int batteryLife;        // kWh
     double timeToCharge;    // hrs -
     double cruisePowerDraw; // kWh / mile
     int passengerCount;
-    double faultsPerHour;  // probability if faults per hour in decimal format.
+    double faultsPerHour; // probability if faults per hour in decimal format.
     std::string typeName; // company name
 };
 
@@ -79,8 +56,9 @@ struct ChargingEvent {
 
 class AircraftInstance {
 public:
-    // although ctor is overriden it is only setting vars so no need for "rule of
-    // 5" here.
+    /**
+     * although ctor is overriden it is only setting vars so no need for "rule of 5" here.
+     */
     AircraftInstance(AirCraftModel aircraftModel, int aircraftId, double flightMinPerCharge);
 
     /**
@@ -103,9 +81,7 @@ public:
     inline std::string modelName() const { return _model.typeName; }
 
     // Number of hours to recharge the battery.
-    inline double batteryChargeTimeMinutes() const {
-        return 60 * _model.timeToCharge;
-    }
+    inline double batteryChargeTimeMinutes() const { return 60 * _model.timeToCharge; }
 
     inline Stamp_t startSegmentTime() const { return _startSegmentTime; }
 
@@ -113,18 +89,14 @@ public:
 
 private:
     void addTelemetry(Stamp_t endTime, double flightTimeToRecordMinutes,
-                      double chargingTimeToRecordMinutes, int flightDistanceInMiles, int numFaults, bool incrementChargingStops);
-//internal state
+                      double chargingTimeToRecordMinutes, int flightDistanceInMiles, int numFaults,
+                      bool incrementChargingStops);
+    // internal state
 private:
-    // these are consts so no need to encapsulate.
     AirCraftModel _model; // copy of the model.
     int _aircraftId;
-    double _flightTimePerCharge; // TODO move this into model.
-
-    // internal state. start of next flight segment. if actively charging this
-    // is start of charging otherwise it is start for flight time.
-    Stamp_t _startSegmentTime; // start time of current flight leg if not in //
-                               // TODO this is doing double-dutyt cleanm it up.
+    double _flightTimePerCharge;
+    Stamp_t _startSegmentTime;
     Telemetry _telemetry;
 };
 

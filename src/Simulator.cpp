@@ -53,7 +53,8 @@ void Simulator::initChargerWaitingQueue(WaitingQueue_T& waitingQueue, Stamp_t si
 
         Stamp_t flightEndTime = _aircrafts[i].flightTimePerCharge();
         flightEndTime = std::min(flightEndTime, simDuration);
-        // record the first leg of flight. After this, telemetry is recorded when they enter/leave charging station.
+        // record the first leg of flight. After this, telemetry is recorded when they enter/leave
+        // charging station.
         _aircrafts[i].updateTelemetryForFlight(flightEndTime, simDuration);
         waitingQueue.push({flightEndTime, ILLEGAL_TIME, ILLEGAL_TIME, aircraftId});
     }
@@ -76,7 +77,8 @@ void Simulator::simulateUntil(int numAircraft, Stamp_t endTime) {
     Stamp_t lowestTime = ILLEGAL_TIME;
     int lowestIndex;
     while (curTime < endTime) {
-        // update charging queues 1 aircraft at a time, more or less (can pop mulitple items off active_queue)
+        // update charging queues 1 aircraft at a time, more or less (can pop mulitple items off
+        // active_queue)
 
         auto waitingEvent = waiting_queue.top();
         waiting_queue.pop();
@@ -95,11 +97,13 @@ void Simulator::simulateUntil(int numAircraft, Stamp_t endTime) {
             // into waiting.
             std::cout << "processing curTime = " << curTime << std::endl;
             Stamp_t nextChargeTime =
-                    _aircrafts[outgoingEvent.aircraftId].updateTelemetryForCharging(curTime, outgoingEvent);
+                _aircrafts[outgoingEvent.aircraftId].updateTelemetryForCharging(curTime,
+                                                                                outgoingEvent);
             nextChargeTime = std::min(nextChargeTime, endTime);
             waiting_queue.push(
                 {nextChargeTime, ILLEGAL_TIME, ILLEGAL_TIME, outgoingEvent.aircraftId});
-            Stamp_t nextTime = _aircrafts[outgoingEvent.aircraftId].updateTelemetryForFlight(curTime, nextChargeTime);
+            Stamp_t nextTime = _aircrafts[outgoingEvent.aircraftId].updateTelemetryForFlight(
+                curTime, nextChargeTime);
         }
         curTime = std::max(curTime, waitingEvent.startWaitingTime);
         int chargeTime = _aircrafts[waitingEvent.aircraftId].batteryChargeTimeMinutes();
@@ -109,14 +113,14 @@ void Simulator::simulateUntil(int numAircraft, Stamp_t endTime) {
     }
 
     // finish up add charging times for the items still on chargers.
-    while(!active_queue.empty()) {
+    while (!active_queue.empty()) {
         auto chargingItem = active_queue.top();
         active_queue.pop();
         _aircrafts[chargingItem.aircraftId].updateTelemetryForCharging(curTime, chargingItem);
     }
-    // update charging times for all that were waiting for chargers that would not still be in the air at end time
-    // (if still in air the previous flight update will include their time).
-    while(!waiting_queue.empty() && waiting_queue.top().startChargingTime < endTime) {
+    // update charging times for all that were waiting for chargers that would not still be in the
+    // air at end time (if still in air the previous flight update will include their time).
+    while (!waiting_queue.empty() && waiting_queue.top().startChargingTime < endTime) {
         auto waitingToCharge = waiting_queue.top();
         waiting_queue.pop();
         _aircrafts[waitingToCharge.aircraftId].updateTelemetryForCharging(curTime, waitingToCharge);
@@ -127,18 +131,17 @@ void Simulator::simulateUntil(int numAircraft, Stamp_t endTime) {
  * Generate CSV output file "results.csv"
  * @return
  */
-
 Report Simulator::generateSimulationReport() const {
     Report report;
     for (auto& aircraft : _aircrafts) {
-        report.addAircraftTelemetry(aircraft.aircraftId(), aircraft.modelName(), aircraft.getTelemetry());
+        report.addAircraftTelemetry(aircraft.aircraftId(), aircraft.modelName(),
+                                    aircraft.getTelemetry());
     }
 
     return report;
 }
 
-void Simulator::writeReport(const Report &report) const {
-    // generate one report for std out. second one will go into results.csv.
+void Simulator::writeReport(const Report& report) const {
 #ifdef USE_DEBUG_INFO
     report.writeReport(std::cout);
 #endif

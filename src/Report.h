@@ -6,22 +6,23 @@
 #include <memory>
 #include <string>
 
-#include "common_defs.h"
 #include "Aircraft.h"
+#include "common_defs.h"
 
 /**
- * Emit events (logfile or sqlite table, putting off the decistion until later)
  * Generates the final report
  *
- * Note - adding sql (swlite or a locla sql server) seems like a better solution to track event metadata, but I don't have time.
+ * TODO - adding sql (sqlite or a local sql server) seems like a better solution to track event
+ * metadata, but I don't have time.
  */
 class Report {
 public:
-    Report();
-    void addAircraftTelemetry(int aircraftId, const std::string& modelName, const Telemetry& telemetry);
+    Report() = default;
+    void addAircraftTelemetry(int aircraftId, const std::string& modelName,
+                              const Telemetry& telemetry);
 
     /**
-     * for CSV ser delim to ,  for stdout set delim to \t.
+     * for CSV use delim to ',''  for stdout set delim to '\t'.
      */
     void writeReport(std::ostream& out, char delim = '\t') const;
 

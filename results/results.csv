@@ -1,0 +1,6 @@
+Model,aircraft-count,avg-flight-time,avg-distance-per-flight,avg-time-charging-per-charge-session,total-faults,total-passenger-miles
+ALPHA,4,0.0277778,200,1.79583,1,12800
+BRAVO,6,0.0459722,274.667,1.425,0,49440
+CHARLIE,5,0.0395,378.2,1.12,2,28365
+DELTA,3,0.0444444,240,1.425,2,4320
+ECHO,2,0.0581178,103,1.76293,5,824

@@ -132,3 +132,5 @@ build/evol
 ```
 
 Results are written to stdout as well as file results.csv.
+
+Note - My previous commit "Purely Cosmetic" appears to have switched the account name on all of he commits from abuecher to my other account segfaultomatic. Weird.
